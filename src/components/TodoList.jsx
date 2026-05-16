@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function TodoList({ todos, isLoading, onDelete, onToggle }) {
+export function TodoList({ todos, isLoading, onDelete, onEdit, onToggle }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between gap-4">
@@ -49,13 +49,23 @@ export function TodoList({ todos, isLoading, onDelete, onToggle }) {
                 </span>
               </label>
 
-              <button
-                type="button"
-                onClick={() => onDelete(todo.id)}
-                className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100"
-              >
-                Supprimer
-              </button>
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={() => onEdit(todo)}
+                  className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                >
+                  Modifier
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onDelete(todo.id)}
+                  className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100"
+                >
+                  Supprimer
+                </button>
+              </div>
             </li>
           ))
         )}

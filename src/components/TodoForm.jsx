@@ -1,22 +1,33 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-export function TodoForm({ onAdd }) {
+export function TodoForm({ editingTodo, onCancelEdit, onSubmit }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
+  const isEditing = Boolean(editingTodo);
+
+  useEffect(() => {
+    setTitle(editingTodo?.title ?? '');
+    setDescription(editingTodo?.description ?? '');
+  }, [editingTodo]);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!title.trim()) return;
 
-    onAdd({
+    setIsSubmitting(true);
+    const saved = await onSubmit({
       title: title.trim(),
       description: description.trim(),
-      completed: false,
     });
+    setIsSubmitting(false);
 
-    setTitle('');
-    setDescription('');
+    if (saved && !isEditing) {
+      setTitle('');
+      setDescription('');
+    }
   };
 
   return (
@@ -26,7 +37,7 @@ export function TodoForm({ onAdd }) {
     >
       <div>
         <h2 className="text-xl font-bold text-slate-950">
-          Ajouter une tâche
+          {isEditing ? 'Modifier la tâche' : 'Ajouter une tâche'}
         </h2>
       </div>
 
@@ -68,10 +79,25 @@ export function TodoForm({ onAdd }) {
 
       <button
         type="submit"
-        className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200"
+        disabled={isSubmitting || !title.trim()}
+        className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
-        Ajouter la tâche
+        {isSubmitting
+          ? 'Enregistrement...'
+          : isEditing
+            ? 'Enregistrer les modifications'
+            : 'Ajouter la tâche'}
       </button>
+
+      {isEditing && (
+        <button
+          type="button"
+          onClick={onCancelEdit}
+          className="w-full rounded-lg border border-slate-300 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
+        >
+          Annuler
+        </button>
+      )}
       </div>
     </form>
   );

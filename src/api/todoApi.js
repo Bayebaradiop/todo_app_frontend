@@ -1,8 +1,16 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api/todos';
 
+async function parseJsonResponse(response) {
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  return response.status === 204 ? null : response.json();
+}
+
 export async function fetchTodos() {
   const response = await fetch(API_URL);
-  return response.json();
+  return parseJsonResponse(response);
 }
 
 export async function createTodo(todo) {
@@ -11,7 +19,7 @@ export async function createTodo(todo) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(todo),
   });
-  return response.json();
+  return parseJsonResponse(response);
 }
 
 export async function updateTodo(id, todo) {
@@ -20,9 +28,10 @@ export async function updateTodo(id, todo) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(todo),
   });
-  return response.json();
+  return parseJsonResponse(response);
 }
 
 export async function deleteTodo(id) {
-  await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+  const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+  return parseJsonResponse(response);
 }
