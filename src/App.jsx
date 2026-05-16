@@ -7,6 +7,7 @@ function App() {
   const [todos, setTodos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingTodo, setEditingTodo] = useState(null);
 
   useEffect(() => {
     loadTodos();
@@ -28,10 +29,31 @@ function App() {
   const handleAdd = async (todo) => {
     try {
       setError('');
-      const created = await createTodo(todo);
+      const created = await createTodo({ ...todo, completed: false });
       setTodos((prev) => [...prev, created]);
+      return true;
     } catch (err) {
       setError("La tâche n'a pas pu être ajoutée.");
+      return false;
+    }
+  };
+
+  const handleUpdate = async (todo) => {
+    if (!editingTodo) return false;
+
+    try {
+      setError('');
+      const currentTodo = todos.find((item) => item.id === editingTodo.id) ?? editingTodo;
+      const updated = await updateTodo(editingTodo.id, {
+        ...currentTodo,
+        ...todo,
+      });
+      setTodos((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      setEditingTodo(null);
+      return true;
+    } catch (err) {
+      setError("La tâche n'a pas pu être modifiée.");
+      return false;
     }
   };
 
@@ -50,9 +72,21 @@ function App() {
       setError('');
       await deleteTodo(id);
       setTodos((prev) => prev.filter((item) => item.id !== id));
+      if (editingTodo?.id === id) {
+        setEditingTodo(null);
+      }
     } catch (err) {
       setError("La tâche n'a pas pu être supprimée.");
     }
+  };
+
+  const handleStartEdit = (todo) => {
+    setError('');
+    setEditingTodo(todo);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTodo(null);
   };
 
   const completedCount = todos.filter((todo) => todo.completed).length;
@@ -85,11 +119,16 @@ function App() {
         )}
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr]">
-          <TodoForm onAdd={handleAdd} />
+          <TodoForm
+            editingTodo={editingTodo}
+            onCancelEdit={handleCancelEdit}
+            onSubmit={editingTodo ? handleUpdate : handleAdd}
+          />
           <TodoList
             todos={todos}
             isLoading={isLoading}
             onDelete={handleDelete}
+            onEdit={handleStartEdit}
             onToggle={handleToggle}
           />
         </section>
