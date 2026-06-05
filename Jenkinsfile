@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    triggers {
+        pollSCM('* * * * *')
+    }
+
     environment {
         DOCKER_IMAGE = 'bayebara01012000/todo-frontend'
         BACKEND_API_URL = 'https://todo-backend-api.purplegrass-93f276e6.swedencentral.azurecontainerapps.io/api/todos'
