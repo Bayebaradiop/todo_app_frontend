@@ -7,7 +7,9 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'bayebara01012000/todo-frontend'
-        BACKEND_API_URL = 'https://todo-backend-api.purplegrass-93f276e6.swedencentral.azurecontainerapps.io/api/todos'
+        BACKEND_API_URL = '/api/todos'
+        VM_HOST = '20.91.231.168'
+        VM_USER = 'azureuser'
     }
 
     stages {
@@ -41,41 +43,20 @@ pipeline {
             }
         }
 
-        stage('Deploy to Azure') {
+        stage('Deploy to VM') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'azure-service-principal',
-                        usernameVariable: 'AZURE_CLIENT_ID',
-                        passwordVariable: 'AZURE_CLIENT_SECRET'
-                    ),
-                    string(credentialsId: 'azure-tenant-id', variable: 'AZURE_TENANT_ID'),
-                    string(credentialsId: 'azure-subscription-id', variable: 'AZURE_SUBSCRIPTION_ID')
-                ]) {
+                sshagent(credentials: ['azure-vm-ssh-key']) {
                     sh '''
-                        docker run --rm \
-                            -e AZURE_CLIENT_ID \
-                            -e AZURE_CLIENT_SECRET \
-                            -e AZURE_TENANT_ID \
-                            -e AZURE_SUBSCRIPTION_ID \
-                            -e DOCKER_IMAGE \
-                            -e BUILD_NUMBER \
-                            mcr.microsoft.com/azure-cli:azurelinux3.0 \
-                            sh -c '
-                                az login \
-                                    --service-principal \
-                                    --username "$AZURE_CLIENT_ID" \
-                                    --password "$AZURE_CLIENT_SECRET" \
-                                    --tenant "$AZURE_TENANT_ID" \
-                                    --output none
-                                az account set \
-                                    --subscription "$AZURE_SUBSCRIPTION_ID"
-                                az containerapp update \
-                                    --name todo-frontend \
-                                    --resource-group rg-todo-backend-dev \
-                                    --image "$DOCKER_IMAGE:$BUILD_NUMBER" \
-                                    --output none
-                            '
+                        ssh -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" "
+                            set -e
+                            docker pull $DOCKER_IMAGE:$BUILD_NUMBER
+                            docker rm -f todo-frontend || true
+                            docker run -d \
+                                --name todo-frontend \
+                                --network todo-network \
+                                -p 80:80 \
+                                $DOCKER_IMAGE:$BUILD_NUMBER
+                        "
                     '''
                 }
             }
